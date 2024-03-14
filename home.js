@@ -1,16 +1,35 @@
-  // Initialize the platform object
-  var platform = new H.service.Platform({
-    'apikey': 'p7h735_8lH9w49kBYsEY1pvkAz97Gd7pMvK9D013aGk'
-  });
+// Initialize the platform object
+var platform = new H.service.Platform({
+  'apikey': 'p7h735_8lH9w49kBYsEY1pvkAz97Gd7pMvK9D013aGk'
+});
 
-  // Obtain the default map types from the platform object
-  var maptypes = platform.createDefaultLayers();
+let map;
 
-  // Instantiate (and display) the map
-  var map = new H.Map(
+navigator.geolocation.getCurrentPosition(position => {
+  const { latitude, longitude } = position.coords;
+
+
+  
+
+  // Center the map on user's location
+  map = new H.Map(
     document.getElementById('mapContainer'),
-    maptypes.vector.normal.map,
+    platform.createDefaultLayers().vector.normal.map,
     {
-      zoom: 4,
-      center: { lat: 20.5937, lng: 78.9629 }
-    });
+      zoom: 15, // Adjust zoom level for better user location visibility
+      center: { lat: latitude, lng: longitude }
+    }
+  );
+  var yourlocationmarker = new H.map.Marker({ lat: latitude, lng: longitude });
+  map.addObject(yourlocationmarker);
+});
+
+document.getElementById("zoomInButton").addEventListener("click", function() {
+  var zoom = map.getZoom();
+  map.setZoom(zoom + 1);
+});
+
+document.getElementById("zoomOutButton").addEventListener("click", function() {
+  var zoom = map.getZoom();
+  map.setZoom(zoom - 1);
+});
