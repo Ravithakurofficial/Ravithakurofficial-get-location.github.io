@@ -14,125 +14,20 @@
     </style>
 </head>
 <body>
-    <div id="mapContainer"></div>
-    <input type="text" id="destinationInput" placeholder="Enter Destination">
-    <button onclick="submitDestination()">Submit</button>
-    <button id="zoomInButton">Zoom In</button>
-    <button id="zoomOutButton">Zoom Out</button>
+  <div class="container">
+    <h1>Hey!, <p id="user_para"></p>
+    </h1>
+    <button onclick="signOut()" id="signOut">Sign Out</button>
+  </div>
+  <div id="mapContainer"></div>
+  <input type="text" id="destinationInput" placeholder="Enter Destination">
+  <button onclick="submitDestination()">Submit</button>
+  <button id="zoomInButton">Zoom In</button>
+  <button id="zoomOutButton">Zoom Out</button>
 
-    <script>
-        // Initialize the platform object
-        var platform = new H.service.Platform({
-            'apikey': 'p7h735_8lH9w49kBYsEY1pvkAz97Gd7pMvK9D013aGk'
-        });
-
-        let map;
-
-        function initializeMap(latitude, longitude) {
-            // Center the map on user's location
-            map = new H.Map(
-                document.getElementById('mapContainer'),
-                platform.createDefaultLayers().vector.normal.map,
-                {
-                    zoom: 15, // Adjust zoom level for better user location visibility
-                    center: { lat: latitude, lng: longitude }
-                }
-            );
-            var yourLocationMarker = new H.map.Marker({ lat: latitude, lng: longitude });
-            map.addObject(yourLocationMarker);
-        }
-
-        function submitDestination() {
-            let destinationInput = document.getElementById("destinationInput").value;
-
-            // Use Geocoding API to get latitude and longitude of the destination
-            var service = platform.getSearchService();
-            service.geocode({ q: destinationInput }, (result) => {
-                if (result.items.length > 0) {
-                    let destination = result.items[0].position.lat + ',' + result.items[0].position.lng;
-                    console.log("Destination coordinates:", destination);
-                    calculateRoute(destination); // Calculate the route with the geocoded destination
-                } else {
-                    alert("Destination not found!");
-                }
-            }, (error) => {
-                console.error("Error fetching geocode data:", error);
-                alert("Error fetching geocode data. Please try again later.");
-            });
-        }
-
-        let onError = (error) => {
-            alert(error.message);
-        }
-
-        // create an instance of the routing service and make a request
-        let router = platform.getRoutingService(null, 8);
-
-        // Define a callback function to process the routing response:
-        let onResult = function (result) {
-            // ensure that at least one route was found
-            if (result.routes.length) {
-                result.routes[0].sections.forEach((section) => {
-                    // Create a linestring to use as a point source for the route line
-                    let linestring = H.geo.LineString.fromFlexiblePolyline(section.polyline);
-
-                    // Create a polyline to display the route:
-                    let routeLine = new H.map.Polyline(linestring, {
-                        style: { strokeColor: 'blue', lineWidth: 3 }
-                    });
-
-                    // Create a marker for the start point:
-                    let startMarker = new H.map.Marker(section.departure.place.location);
-
-                    // Create a marker for the end point:
-                    let endMarker = new H.map.Marker(section.arrival.place.location);
-
-                    // Add the route polyline and the two markers to the map:
-                    map.addObjects([routeLine, startMarker, endMarker]);
-
-                    // Set the map's viewport to make the whole route visible:
-                    map.getViewModel().setLookAtData({ bounds: routeLine.getBoundingBox() });
-                });
-            }
-        };
-
-        let routingParameters = {
-            'transportMode': 'car',
-            // Include the route shape in the response
-            'return': 'polyline'
-        };
-
-        // Define a callback that calculates the route
-        let calculateRoute = (destination) => {
-            // Make sure that destination is present
-            if (!destination) return;
-
-            // Add origin and destination to the routing parameters
-            routingParameters.origin = map.getCenter().lat + ',' + map.getCenter().lng;
-            routingParameters.destination = destination;
-
-            // Call the router service to calculate the route
-            router.calculateRoute(routingParameters, onResult, onError);
-        }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            // Get user's current location
-            navigator.geolocation.getCurrentPosition(position => {
-                const { latitude, longitude } = position.coords;
-                initializeMap(latitude, longitude);
-            });
-            
-            // Zoom In and Zoom Out functionality
-            document.getElementById("zoomInButton").addEventListener("click", function () {
-                var zoom = map.getZoom();
-                map.setZoom(zoom + 1);
-            });
-
-            document.getElementById("zoomOutButton").addEventListener("click", function () {
-                var zoom = map.getZoom();
-                map.setZoom(zoom - 1);
-            });
-        });
-    </script>
+  <script src="./src/home.js">
+  </script>
 </body>
+
 </html>
+
