@@ -1,5 +1,4 @@
- // Initialize the platform object
- var platform = new H.service.Platform({
+var platform = new H.service.Platform({
   'apikey': 'p7h735_8lH9w49kBYsEY1pvkAz97Gd7pMvK9D013aGk'
 });
 
@@ -7,16 +6,31 @@ let map;
 
 function initializeMap(latitude, longitude) {
   // Center the map on user's location
+  const defaultLayers = platform.createDefaultLayers();
   map = new H.Map(
-      document.getElementById('mapContainer'),
-      platform.createDefaultLayers().vector.normal.map,
-      {
-          zoom: 15, // Adjust zoom level for better user location visibility
-          center: { lat: latitude, lng: longitude }
-      }
+    document.getElementById('mapContainer'),
+    defaultLayers.vector.normal.map, {
+      zoom: 15, // Adjust zoom level for better user location visibility
+      center: { lat: latitude, lng: longitude }
+    }
   );
+
   var yourLocationMarker = new H.map.Marker({ lat: latitude, lng: longitude });
   map.addObject(yourLocationMarker);
+
+  map.addLayer(defaultLayers.vector.traffic);
+
+  const behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
+
+  // Create the default UI:
+  const ui = H.ui.UI.createDefault(map, defaultLayers);
+
+  // Continuously track user's location
+  navigator.geolocation.watchPosition(position => {
+    const { latitude, longitude } = position.coords;
+    yourLocationMarker.setGeometry({ lat: latitude, lng: longitude });
+    map.setCenter({ lat: latitude, lng: longitude });
+  });
 }
 
 function submitDestination() {
@@ -25,16 +39,22 @@ function submitDestination() {
   // Use Geocoding API to get latitude and longitude of the destination
   var service = platform.getSearchService();
   service.geocode({ q: destinationInput }, (result) => {
-      if (result.items.length > 0) {
-          let destination = result.items[0].position.lat + ',' + result.items[0].position.lng;
-          console.log("Destination coordinates:", destination);
-          calculateRoute(destination); // Calculate the route with the geocoded destination
-      } else {
-          alert("Destination not found!");
-      }
+    if (result.items.length > 0) {
+      let destination = result.items[0].position.lat + ',' + result.items[0].position.lng;
+      console.log("Destination coordinates:", destination);
+      calculateRoute(destination); // Calculate the route with the geocoded destination
+
+      // Center the map on user's location after calculating the route
+      navigator.geolocation.getCurrentPosition(position => {
+        const { latitude, longitude } = position.coords;
+        map.setCenter({ lat: latitude, lng: longitude });
+      });
+    } else {
+      alert("Destination not found!");
+    }
   }, (error) => {
-      console.error("Error fetching geocode data:", error);
-      alert("Error fetching geocode data. Please try again later.");
+    console.error("Error fetching geocode data:", error);
+    alert("Error fetching geocode data. Please try again later.");
   });
 }
 
@@ -47,29 +67,32 @@ let router = platform.getRoutingService(null, 8);
 
 // Define a callback function to process the routing response:
 let onResult = function (result) {
+  // Clear previous routes
+  map.removeObjects(map.getObjects());
+
   // ensure that at least one route was found
   if (result.routes.length) {
-      result.routes[0].sections.forEach((section) => {
-          // Create a linestring to use as a point source for the route line
-          let linestring = H.geo.LineString.fromFlexiblePolyline(section.polyline);
+    result.routes[0].sections.forEach((section) => {
+      // Create a linestring to use as a point source for the route line
+      let linestring = H.geo.LineString.fromFlexiblePolyline(section.polyline);
 
-          // Create a polyline to display the route:
-          let routeLine = new H.map.Polyline(linestring, {
-              style: { strokeColor: 'blue', lineWidth: 3 }
-          });
-
-          // Create a marker for the start point:
-          let startMarker = new H.map.Marker(section.departure.place.location);
-
-          // Create a marker for the end point:
-          let endMarker = new H.map.Marker(section.arrival.place.location);
-
-          // Add the route polyline and the two markers to the map:
-          map.addObjects([routeLine, startMarker, endMarker]);
-
-          // Set the map's viewport to make the whole route visible:
-          map.getViewModel().setLookAtData({ bounds: routeLine.getBoundingBox() });
+      // Create a polyline to display the route:
+      let routeLine = new H.map.Polyline(linestring, {
+        style: { strokeColor: 'blue', lineWidth: 3 }
       });
+
+      // Create a marker for the start point:
+      let startMarker = new H.map.Marker(section.departure.place.location);
+
+      // Create a marker for the end point:
+      let endMarker = new H.map.Marker(section.arrival.place.location);
+
+      // Add the route polyline and the two markers to the map:
+      map.addObjects([routeLine, startMarker, endMarker]);
+
+      // Set the map's viewport to make the whole route visible:
+      map.getViewModel().setLookAtData({ bounds: routeLine.getBoundingBox() });
+    });
   }
 };
 
@@ -95,18 +118,18 @@ let calculateRoute = (destination) => {
 document.addEventListener("DOMContentLoaded", () => {
   // Get user's current location
   navigator.geolocation.getCurrentPosition(position => {
-      const { latitude, longitude } = position.coords;
-      initializeMap(latitude, longitude);
+    const { latitude, longitude } = position.coords;
+    initializeMap(latitude, longitude);
   });
-  
+
   // Zoom In and Zoom Out functionality
   document.getElementById("zoomInButton").addEventListener("click", function () {
-      var zoom = map.getZoom();
-      map.setZoom(zoom + 1);
+    var zoom = map.getZoom();
+    map.setZoom(zoom + 1);
   });
 
   document.getElementById("zoomOutButton").addEventListener("click", function () {
-      var zoom = map.getZoom();
-      map.setZoom(zoom - 1);
+    var zoom = map.getZoom();
+    map.setZoom(zoom - 1);
   });
 });
