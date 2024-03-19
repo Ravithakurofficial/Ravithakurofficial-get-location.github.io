@@ -56,11 +56,28 @@ function submitDestination() {
     console.error("Error fetching geocode data:", error);
     alert("Error fetching geocode data. Please try again later.");
   });
+  service.geocode(
+    { q: destinationInput },
+    (result) => {
+      if (result.items.length > 0) {
+        let destination =
+          result.items[0].position.lat + "," + result.items[0].position.lng;
+        console.log("Destination coordinates:", destination);
+        calculateRoute(destination); // Calculate the route with the geocoded destination
+      } else {
+        alert("Destination not found!");
+      }
+    },
+    (error) => {
+      console.error("Error fetching geocode data:", error);
+      alert("Error fetching geocode data. Please try again later.");
+    }
+  );
 }
 
 let onError = (error) => {
   alert(error.message);
-}
+};
 
 // create an instance of the routing service and make a request
 let router = platform.getRoutingService(null, 8);
@@ -78,7 +95,7 @@ let onResult = function (result) {
 
       // Create a polyline to display the route:
       let routeLine = new H.map.Polyline(linestring, {
-        style: { strokeColor: 'blue', lineWidth: 3 }
+        style: { strokeColor: "blue", lineWidth: 3 },
       });
 
       // Create a marker for the start point:
@@ -97,9 +114,9 @@ let onResult = function (result) {
 };
 
 let routingParameters = {
-  'transportMode': 'car',
+  transportMode: "car",
   // Include the route shape in the response
-  'return': 'polyline'
+  return: "polyline",
 };
 
 // Define a callback that calculates the route
@@ -108,12 +125,12 @@ let calculateRoute = (destination) => {
   if (!destination) return;
 
   // Add origin and destination to the routing parameters
-  routingParameters.origin = map.getCenter().lat + ',' + map.getCenter().lng;
+  routingParameters.origin = map.getCenter().lat + "," + map.getCenter().lng;
   routingParameters.destination = destination;
 
   // Call the router service to calculate the route
   router.calculateRoute(routingParameters, onResult, onError);
-}
+};
 
 document.addEventListener("DOMContentLoaded", () => {
   // Get user's current location
@@ -133,3 +150,37 @@ document.addEventListener("DOMContentLoaded", () => {
     map.setZoom(zoom - 1);
   });
 });
+
+// Pinch In and Pinch Out functionality with touchpad mouse
+document.getElementById("mapContainer").addEventListener("wheel", function (event) {
+      var delta = Math.sign(event.deltaY); // Determine whether to zoom in or out based on the scroll direction
+      var zoom = map.getZoom();
+      map.setZoom(zoom + delta); // Adjust the zoom level accordingly
+      event.preventDefault(); // Prevent the default scrolling behavior
+});
+
+let lastTouchDistance = 0;
+
+document.getElementById("mapContainer").addEventListener("touchmove", function (event) {
+      if (event.touches.length === 2) {
+        var touch1 = event.touches[0];
+        var touch2 = event.touches[1];
+        var touchDistance = Math.sqrt(
+          Math.pow(touch1.clientX - touch2.clientX, 2) +
+            Math.pow(touch1.clientY - touch2.clientY, 2)
+        );
+
+        if (lastTouchDistance !== 0) {
+          var delta = touchDistance - lastTouchDistance;
+          var zoom = map.getZoom();
+          map.setZoom(zoom + delta / 100); // Adjust the zoom level based on touch distance change
+        }
+
+        lastTouchDistance = touchDistance;
+      }
+});
+
+document.getElementById("mapContainer").addEventListener("touchend", function () {
+      lastTouchDistance = 0;
+});
+  
