@@ -1,5 +1,5 @@
 var platform = new H.service.Platform({
-  'apikey': 'p7h735_8lH9w49kBYsEY1pvkAz97Gd7pMvK9D013aGk'
+  apikey: "p7h735_8lH9w49kBYsEY1pvkAz97Gd7pMvK9D013aGk",
 });
 
 let map;
@@ -8,10 +8,11 @@ function initializeMap(latitude, longitude) {
   // Center the map on user's location
   const defaultLayers = platform.createDefaultLayers();
   map = new H.Map(
-    document.getElementById('mapContainer'),
-    defaultLayers.vector.normal.map, {
+    document.getElementById("mapContainer"),
+    defaultLayers.vector.normal.map,
+    {
       zoom: 15, // Adjust zoom level for better user location visibility
-      center: { lat: latitude, lng: longitude }
+      center: { lat: latitude, lng: longitude },
     }
   );
 
@@ -26,7 +27,7 @@ function initializeMap(latitude, longitude) {
   const ui = H.ui.UI.createDefault(map, defaultLayers);
 
   // Continuously track user's location
-  navigator.geolocation.watchPosition(position => {
+  navigator.geolocation.watchPosition((position) => {
     const { latitude, longitude } = position.coords;
     yourLocationMarker.setGeometry({ lat: latitude, lng: longitude });
     map.setCenter({ lat: latitude, lng: longitude });
@@ -38,24 +39,29 @@ function submitDestination() {
 
   // Use Geocoding API to get latitude and longitude of the destination
   var service = platform.getSearchService();
-  service.geocode({ q: destinationInput }, (result) => {
-    if (result.items.length > 0) {
-      let destination = result.items[0].position.lat + ',' + result.items[0].position.lng;
-      console.log("Destination coordinates:", destination);
-      calculateRoute(destination); // Calculate the route with the geocoded destination
+  service.geocode(
+    { q: destinationInput },
+    (result) => {
+      if (result.items.length > 0) {
+        let destination =
+          result.items[0].position.lat + "," + result.items[0].position.lng;
+        console.log("Destination coordinates:", destination);
+        calculateRoute(destination); // Calculate the route with the geocoded destination
 
-      // Center the map on user's location after calculating the route
-      navigator.geolocation.getCurrentPosition(position => {
-        const { latitude, longitude } = position.coords;
-        map.setCenter({ lat: latitude, lng: longitude });
-      });
-    } else {
-      alert("Destination not found!");
+        // Center the map on user's location after calculating the route
+        navigator.geolocation.getCurrentPosition((position) => {
+          const { latitude, longitude } = position.coords;
+          map.setCenter({ lat: latitude, lng: longitude });
+        });
+      } else {
+        alert("Destination not found!");
+      }
+    },
+    (error) => {
+      console.error("Error fetching geocode data:", error);
+      alert("Error fetching geocode data. Please try again later.");
     }
-  }, (error) => {
-    console.error("Error fetching geocode data:", error);
-    alert("Error fetching geocode data. Please try again later.");
-  });
+  );
   service.geocode(
     { q: destinationInput },
     (result) => {
@@ -134,53 +140,77 @@ let calculateRoute = (destination) => {
 
 document.addEventListener("DOMContentLoaded", () => {
   // Get user's current location
-  navigator.geolocation.getCurrentPosition(position => {
+  navigator.geolocation.getCurrentPosition((position) => {
     const { latitude, longitude } = position.coords;
     initializeMap(latitude, longitude);
   });
 
   // Zoom In and Zoom Out functionality
-  document.getElementById("zoomInButton").addEventListener("click", function () {
-    var zoom = map.getZoom();
-    map.setZoom(zoom + 1);
-  });
+  document
+    .getElementById("zoomInButton")
+    .addEventListener("click", function () {
+      var zoom = map.getZoom();
+      map.setZoom(zoom + 1);
+    });
 
-  document.getElementById("zoomOutButton").addEventListener("click", function () {
-    var zoom = map.getZoom();
-    map.setZoom(zoom - 1);
-  });
+  document
+    .getElementById("zoomOutButton")
+    .addEventListener("click", function () {
+      var zoom = map.getZoom();
+      map.setZoom(zoom - 1);
+    });
 });
 
 // Pinch In and Pinch Out functionality with touchpad mouse
-document.getElementById("mapContainer").addEventListener("wheel", function (event) {
-      var delta = Math.sign(event.deltaY); // Determine whether to zoom in or out based on the scroll direction
-      var zoom = map.getZoom();
-      map.setZoom(zoom + delta); // Adjust the zoom level accordingly
-      event.preventDefault(); // Prevent the default scrolling behavior
-});
+document
+  .getElementById("mapContainer")
+  .addEventListener("wheel", function (event) {
+    var delta = Math.sign(event.deltaY); // Determine whether to zoom in or out based on the scroll direction
+    var zoom = map.getZoom();
+    map.setZoom(zoom + delta); // Adjust the zoom level accordingly
+    event.preventDefault(); // Prevent the default scrolling behavior
+  });
 
 let lastTouchDistance = 0;
 
-document.getElementById("mapContainer").addEventListener("touchmove", function (event) {
-      if (event.touches.length === 2) {
-        var touch1 = event.touches[0];
-        var touch2 = event.touches[1];
-        var touchDistance = Math.sqrt(
-          Math.pow(touch1.clientX - touch2.clientX, 2) +
-            Math.pow(touch1.clientY - touch2.clientY, 2)
-        );
+document
+  .getElementById("mapContainer")
+  .addEventListener("touchmove", function (event) {
+    if (event.touches.length === 2) {
+      var touch1 = event.touches[0];
+      var touch2 = event.touches[1];
+      var touchDistance = Math.sqrt(
+        Math.pow(touch1.clientX - touch2.clientX, 2) +
+          Math.pow(touch1.clientY - touch2.clientY, 2)
+      );
 
-        if (lastTouchDistance !== 0) {
-          var delta = touchDistance - lastTouchDistance;
-          var zoom = map.getZoom();
-          map.setZoom(zoom + delta / 100); // Adjust the zoom level based on touch distance change
-        }
-
-        lastTouchDistance = touchDistance;
+      if (lastTouchDistance !== 0) {
+        var delta = touchDistance - lastTouchDistance;
+        var zoom = map.getZoom();
+        map.setZoom(zoom + delta / 100); // Adjust the zoom level based on touch distance change
       }
-});
 
-document.getElementById("mapContainer").addEventListener("touchend", function () {
-      lastTouchDistance = 0;
+      lastTouchDistance = touchDistance;
+    }
+  });
+
+document
+  .getElementById("mapContainer")
+  .addEventListener("touchend", function () {
+    lastTouchDistance = 0;
+  });
+
+const documentHeight = () => {
+  const doc = document.documentElement;
+  doc.style.setProperty("--doc-height", `${window.innerHeight}px`);
+};
+window.addEventListener("resize", documentHeight);
+documentHeight();
+
+let doctitle = document.title;
+window.addEventListener("blur", () => {
+  document.title = "👋 Hey! come back...";
 });
-  
+window.addEventListener("focus", () => {
+  document.title = doctitle;
+});
